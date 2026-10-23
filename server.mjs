@@ -983,6 +983,7 @@ function bootstrapFromEnv() {
   for (const line of String(process.env.SOURCES || '').split(/\r?\n/).filter(l => l.trim())) {
     const p = parseLine(line); if (p.error) { console.log('  SOURCES : ligne ignorée (' + p.error + ')'); continue; }
     if (have.has(p.server + '|' + p.user.toLowerCase())) continue;
+    have.add(p.server + '|' + p.user.toLowerCase());
     n++; run('INSERT INTO sources(n,name,server,user,pass,active) VALUES(?,?,?,?,?,1)', n, p.name, p.server, enc(p.user), enc(p.pass)); added++;
   }
   for (const line of String(process.env.CODES || '').split(/\r?\n/).filter(l => l.trim())) {
@@ -990,7 +991,7 @@ function bootstrapFromEnv() {
     if (raw.length < 12) { console.log('  CODES : code trop court ignoré (12 caractères minimum)'); continue; }
     if (q1('SELECT 1 FROM codes WHERE code=?', raw)) continue;
     run('INSERT INTO codes(code,label,max_conn,max_devices,can_download,max_dl_day,max_profiles,expires,created) VALUES(?,?,?,?,?,?,?,?,?)', raw, label.slice(0, 80),
-      mc ? Number(mc) : 2, md ? Number(md) : -1, dl === '1' ? 1 : 0, 0, 5, null, Date.now());
+      mc ? Number(mc) : 2, md ? Number(md) : -1, dl === '1' ? 1 : 0, dl === '1' ? -1 : 0, -1, null, Date.now());
   }
   if (added) resetCaches();
   if (process.env.AUTO_IMPORT === '1' && activeSources().length && q1('SELECT COUNT(*) n FROM titles').n === 0) {
