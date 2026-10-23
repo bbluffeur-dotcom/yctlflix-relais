@@ -1,0 +1,697 @@
+<!doctype html>
+<html lang="fr"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0908">
+<title>Yctlflix</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=Cormorant+Garamond:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js" defer></script>
+<style>
+:root{--bg:#0a0908;--bg2:#13100d;--card:#17130f;--line:#2b241b;--tx:#F1EEE7;--mu:#a39a8a;--g1:#C9A057;--g2:#F2DCA8;--g:#D8B46A;--ko:#e57373;--ok:#7bc47f;--r:18px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 Archivo,system-ui,Segoe UI,sans-serif}
+button{font:inherit;color:inherit;cursor:pointer}
+input,select{font:inherit;color:var(--tx);background:#0e0c0a;border:1px solid var(--line);border-radius:999px;padding:11px 16px;outline:none}
+input:focus,select:focus{border-color:var(--g1)}
+.serif{font-family:'Cormorant Garamond',Georgia,serif}
+.gold{background:linear-gradient(90deg,var(--g1),var(--g2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.btn{border:0;border-radius:999px;padding:11px 22px;font-weight:600;background:linear-gradient(90deg,var(--g1),var(--g2));color:#14110e}
+.btn.ghost{background:rgba(255,255,255,.08);color:var(--tx);border:1px solid var(--line)}
+.btn.sm{padding:7px 14px;font-size:13px}
+.mu{color:var(--mu)}.err{color:var(--ko)}
+.hide{display:none!important}
+/* écrans plein cadre */
+.center{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;text-align:center}
+.center h1{font-size:54px;margin:0}
+.panel{width:min(420px,100%);display:flex;flex-direction:column;gap:12px}
+/* profils */
+.profiles{display:flex;gap:26px;flex-wrap:wrap;justify-content:center;max-width:820px}
+.prof{background:none;border:0;display:flex;flex-direction:column;align-items:center;gap:10px;width:120px}
+.avatar{width:104px;height:104px;border-radius:26px;display:grid;place-items:center;font:600 44px 'Cormorant Garamond',serif;color:#14110e;transition:transform .15s,box-shadow .15s}
+.prof:hover .avatar{transform:scale(1.07);box-shadow:0 0 0 3px var(--g2)}
+.kidtag{font-size:11px;border:1px solid var(--g1);color:var(--g2);border-radius:99px;padding:0 8px}
+/* barre du haut */
+header.top{position:fixed;inset:0 0 auto 0;z-index:20;display:flex;align-items:center;gap:22px;padding:12px 4vw;background:linear-gradient(#0a0908ee,#0a090800);backdrop-filter:blur(2px)}
+header.top.solid{background:#0a0908f2}
+.logo{font:700 30px 'Cormorant Garamond',serif;letter-spacing:.5px}
+nav.main{display:flex;gap:4px;flex:1;overflow:auto;scrollbar-width:none}
+nav.main a{color:var(--mu);text-decoration:none;padding:7px 14px;border-radius:99px;white-space:nowrap;cursor:pointer}
+nav.main a.on,nav.main a:hover{color:var(--tx)}nav.main a.on{background:rgba(255,255,255,.08)}
+.iconbtn{background:none;border:0;padding:6px;border-radius:50%;display:grid;place-items:center}
+.iconbtn:hover{background:rgba(255,255,255,.08)}
+.iconbtn svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.avatar.sm{width:34px;height:34px;border-radius:10px;font-size:18px}
+.menu{position:fixed;right:4vw;top:58px;z-index:30;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:6px;min-width:200px;box-shadow:0 14px 40px #000a}
+.menu button{display:block;width:100%;text-align:left;background:none;border:0;border-radius:10px;padding:10px 14px}.menu button:hover{background:rgba(255,255,255,.08)}
+main{padding-top:70px;min-height:100vh}
+/* héros */
+.hero{position:relative;min-height:62vh;display:flex;align-items:flex-end;padding:0 4vw 48px;margin-top:-70px;overflow:hidden}
+.hero .bg{position:absolute;inset:0;background-size:cover;background-position:center 20%;filter:blur(26px) brightness(.5) saturate(1.2);transform:scale(1.15)}
+.hero .fade{position:absolute;inset:0;background:linear-gradient(0deg,var(--bg) 0,#0a090800 55%),linear-gradient(90deg,#0a0908cc,#0a090800 70%)}
+.hero .in{position:relative;display:flex;gap:34px;align-items:flex-end;width:100%;max-width:1200px}
+.hero img{width:200px;aspect-ratio:2/3;object-fit:cover;border-radius:var(--r);box-shadow:0 20px 60px #000c;flex:none}
+.hero h2{font:700 clamp(34px,5vw,64px)/1.05 'Cormorant Garamond',serif;margin:0 0 10px}
+.hero .acts{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+/* rangées et grilles */
+.rail{padding:18px 0 4px}.rail h3{font:600 26px 'Cormorant Garamond',serif;margin:0 4vw 10px}
+.row{display:flex;gap:14px;overflow-x:auto;padding:6px 4vw 14px;scroll-snap-type:x proximity;scrollbar-width:thin;scrollbar-color:#3a3126 transparent}
+.row .card{flex:none;width:156px;scroll-snap-align:start}.row .card.live{width:210px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:18px 14px;padding:10px 4vw 60px}
+.grid.live{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+.card{background:none;border:0;padding:0;text-align:left;display:block;min-width:0}
+.poster{position:relative;aspect-ratio:2/3;border-radius:14px;overflow:hidden;background:linear-gradient(135deg,#241d15,#14110d);transition:transform .18s,box-shadow .18s}
+.card.live .poster{aspect-ratio:16/10}
+.card.live .poster img{object-fit:contain;padding:14px}
+.card:hover .poster{transform:scale(1.05);box-shadow:0 0 0 2px var(--g1),0 14px 34px #000a}
+.poster img{width:100%;height:100%;object-fit:cover;display:block}
+.poster .ph{position:absolute;inset:0;display:grid;place-items:center;font:600 34px 'Cormorant Garamond',serif;color:#5b4d36;padding:8px;text-align:center}
+.ctitle{margin-top:7px;font-size:13.5px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.src{position:absolute;left:7px;top:7px;font-size:10.5px;background:#000a;border-radius:99px;padding:1px 8px;color:var(--g2)}
+.prog{position:absolute;left:0;right:0;bottom:0;height:4px;background:#0008}.prog i{display:block;height:100%;background:linear-gradient(90deg,var(--g1),var(--g2))}
+.bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:14px 4vw 4px}
+.bar h1{font:700 40px 'Cormorant Garamond',serif;margin:0 14px 0 0}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:none;border-radius:99px;padding:6px 14px;font-size:13px;color:var(--mu)}
+.chip.on{background:linear-gradient(90deg,var(--g1),var(--g2));color:#14110e;border-color:transparent;font-weight:600}
+.state{padding:40px 4vw;text-align:center}
+.spin{width:34px;height:34px;border:3px solid #3a3126;border-top-color:var(--g2);border-radius:50%;animation:sp .8s linear infinite;margin:0 auto}
+@keyframes sp{to{transform:rotate(360deg)}}
+/* recherche */
+.search{display:flex;gap:10px;padding:16px 4vw 0}.search input{flex:1;max-width:560px}
+/* fiche */
+.modal{position:fixed;inset:0;z-index:40;background:#000c;display:grid;place-items:center;padding:3vh 3vw;overflow:auto}
+.sheet{width:min(920px,100%);max-height:94vh;overflow:auto;background:var(--bg2);border:1px solid var(--line);border-radius:26px;position:relative}
+.sheet .head{display:flex;gap:26px;padding:28px;flex-wrap:wrap}
+.sheet .head img{width:190px;aspect-ratio:2/3;object-fit:cover;border-radius:16px;flex:none;background:#241d15}
+.sheet h2{font:700 40px/1.05 'Cormorant Garamond',serif;margin:0 0 8px}
+.sheet .x{position:absolute;right:14px;top:14px;z-index:2;background:#0008}
+.meta{display:flex;gap:10px;flex-wrap:wrap;color:var(--mu);font-size:13px;margin-bottom:10px}
+.plot{color:#d8d2c6;max-width:60ch}
+.eps{padding:0 28px 28px}.ep{display:flex;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.ep b{width:34px;color:var(--g)}.ep span{flex:1}.ep .mu{font-size:12.5px}
+/* lecteur */
+.player{position:fixed;inset:0;z-index:60;background:#000;display:flex;flex-direction:column;user-select:none}
+.player video{width:100%;height:100%;background:#000;object-fit:contain}
+.player .ov{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;transition:opacity .25s;background:linear-gradient(#000a,#0000 22%,#0000 70%,#000c)}
+.player.idle .ov{opacity:0;cursor:none}.player.idle .banner{opacity:1}
+.ov .t{display:flex;gap:14px;align-items:center;padding:16px 22px}.ov .t .ttl{font:600 26px 'Cormorant Garamond',serif;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ov .b{padding:0 22px 18px}.ctl{display:flex;align-items:center;gap:6px;margin-top:6px}.ctl .sp{flex:1}
+.seek{display:flex;align-items:center;gap:12px;font-size:13px;font-variant-numeric:tabular-nums}
+input[type=range]{-webkit-appearance:none;appearance:none;height:5px;border-radius:9px;background:#fff3;padding:0;border:0;flex:1;min-width:60px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;background:var(--g2)}
+input[type=range]::-moz-range-thumb{width:15px;height:15px;border:0;border-radius:50%;background:var(--g2)}
+.vol{width:90px;flex:none}
+.centerbox{position:absolute;inset:0;display:flex;flex-direction:column;gap:14px;align-items:center;justify-content:center;text-align:center;padding:30px;pointer-events:none}
+.centerbox>*{pointer-events:auto}.centerbox .msg{max-width:520px;font-size:17px}
+.banner{position:absolute;left:50%;top:70px;transform:translateX(-50%);background:#000b;border:1px solid var(--g1);color:var(--g2);padding:8px 18px;border-radius:99px;font-size:14px;display:flex;gap:10px;align-items:center;pointer-events:auto;z-index:3}
+.pmenu{position:absolute;right:22px;bottom:96px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:6px;min-width:210px;max-height:50vh;overflow:auto}
+.pmenu h4{margin:8px 12px 4px;font-size:12px;color:var(--mu);text-transform:uppercase;letter-spacing:.08em;font-weight:500}
+.pmenu button{display:block;width:100%;text-align:left;background:none;border:0;border-radius:10px;padding:8px 12px}.pmenu button:hover{background:#fff1}.pmenu button.on{color:var(--g2)}
+#toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#1c1710;border:1px solid var(--g1);border-radius:14px;padding:11px 18px;z-index:90;display:none;max-width:90vw}
+@media(max-width:640px){.hero img{display:none}.vol{display:none}.sheet .head{padding:18px}.sheet .head img{width:120px}.logo{font-size:24px}.ov .t .ttl{font-size:20px}}
+</style></head><body>
+<div id="root"></div><div id="toast"></div>
+<script>
+'use strict';
+/* ====================== utilitaires ====================== */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const LS = {
+  get(k, d = null) { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+  del(k) { try { localStorage.removeItem(k); } catch {} },
+};
+const dev = LS.get('ydev') || (() => { const v = Math.random().toString(36).slice(2) + Date.now().toString(36); LS.set('ydev', v); return v; })();
+const S = { code: LS.get('ycode'), me: null, profile: null, counts: null, favs: new Map(), hist: new Map(), view: null };
+const fmtTime = (t) => { t = Math.max(0, Math.floor(t || 0)); const h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60), s = t % 60; return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(s).padStart(2, '0'); };
+const key = (it) => `${it.src}/${it.type}/${it.id}`;
+const COLORS = ['#C9A057', '#D8B46A', '#b88a8a', '#8aa6b8', '#9bb88a', '#b88ac2', '#e0a070'];
+let toastT; function toast(m, ms = 4500) { const t = $('#toast'); t.textContent = m; t.style.display = 'block'; clearTimeout(toastT); toastT = setTimeout(() => t.style.display = 'none', ms); }
+const ICON = {
+  search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
+  play: '<svg viewBox="0 0 24 24" style="fill:currentColor;stroke:none"><path d="M7 4.5v15l13-7.5z"/></svg>',
+  pause: '<svg viewBox="0 0 24 24" style="fill:currentColor;stroke:none"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>',
+  back10: '<svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><text x="8" y="16" font-size="7" stroke="none" fill="currentColor">10</text></svg>',
+  fwd10: '<svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/><text x="8" y="16" font-size="7" stroke="none" fill="currentColor">10</text></svg>',
+  vol: '<svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/></svg>',
+  mute: '<svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="m17 9 5 6m0-6-5 6"/></svg>',
+  full: '<svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>',
+  pip: '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><rect x="12" y="12" width="7" height="5" rx="1" fill="currentColor"/></svg>',
+  tracks: '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 12h3M7 15h6M14 12h3"/></svg>',
+  close: '<svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg>',
+};
+
+/* ====================== accès au relais ====================== */
+async function api(path, { method = 'GET', body, signal } = {}) {
+  let r;
+  try {
+    r = await fetch(path, { method, signal, body: body ? JSON.stringify(body) : undefined,
+      headers: { 'X-Code': S.code || '', 'X-Device': dev, 'X-Profile': S.profile ? S.profile.id : '', ...(body ? { 'Content-Type': 'application/json' } : {}) } });
+  } catch (e) {
+    if (e.name === 'AbortError') throw e;
+    throw Object.assign(new Error('Le serveur ne répond pas. Vérifiez que l\'ordinateur du relais est allumé.'), { offline: true });
+  }
+  let j = null; try { j = await r.json(); } catch {}
+  if (!r.ok) throw Object.assign(new Error(j?.error || ('Erreur ' + r.status)), { status: r.status });
+  return j;
+}
+
+/* ====================== écrans de départ ====================== */
+const root = $('#root');
+function mount(html) { root.innerHTML = html; return root; }
+
+function showOffline(msg) {
+  mount(`<div class="center"><h1 class="serif gold">Yctlflix</h1><p class="mu" style="max-width:420px">${esc(msg || 'Le catalogue est hors ligne pour le moment.')}</p><button class="btn" id="retry">Réessayer</button></div>`);
+  $('#retry').onclick = boot;
+}
+function showLogin(msg) {
+  mount(`<div class="center"><h1 class="serif gold">Yctlflix</h1><p class="mu">Entrez votre code d'accès</p>
+    <form class="panel" id="f"><input id="code" placeholder="XXXXX-XXXXX-XXXXX-XXXXX" autocomplete="off" autocapitalize="characters" spellcheck="false" style="text-align:center;letter-spacing:.08em">
+    <button class="btn" type="submit">Entrer</button><div id="m" class="err">${esc(msg || '')}</div></form>
+    <p class="mu" style="font-size:13px;max-width:380px">Pas de code ? Demandez-en un à l'administrateur.</p></div>`);
+  $('#f').onsubmit = async (e) => {
+    e.preventDefault(); S.code = $('#code').value.trim();
+    if (!S.code) return;
+    try { S.me = await api('/api/me'); LS.set('ycode', S.code); LS.del('yprofile'); S.profile = null; showProfiles(); }
+    catch (err) { $('#m').textContent = err.status === 401 ? 'Code invalide ou désactivé.' : err.message; S.code = null; }
+  };
+}
+async function showProfiles(manage = false) {
+  let list;
+  try { list = await api('/api/profiles'); } catch (e) { return e.status === 401 ? (LS.del('ycode'), showLogin('Votre code d\'accès n\'est plus valable. Contactez l\'administrateur.')) : showOffline(e.message); }
+  const max = S.me?.maxProfiles ?? 5, canAdd = max < 0 || list.length < max;
+  mount(`<div class="center"><h1 class="serif gold" style="font-size:44px">Qui regarde ?</h1>
+    <div class="profiles">${list.map(p => `<button class="prof" data-id="${p.id}"><div class="avatar" style="background:${esc(p.color)}">${esc(p.name[0].toUpperCase())}</div><span>${esc(p.name)}</span>${p.kids ? '<span class="kidtag">Enfants</span>' : ''}${manage ? '<span class="err" style="font-size:12px">Supprimer</span>' : ''}</button>`).join('')}
+    ${canAdd ? `<button class="prof" id="add"><div class="avatar" style="background:#241d15;color:var(--g2)">+</div><span>Ajouter</span></button>` : ''}</div>
+    <button class="btn ghost sm" id="manage">${manage ? 'Terminé' : 'Gérer les profils'}</button>
+    <button class="btn ghost sm" id="out">Changer de code</button></div>`);
+  root.querySelectorAll('.prof[data-id]').forEach(b => b.onclick = async () => {
+    const p = list.find(x => x.id == b.dataset.id);
+    if (manage) { if (confirm(`Supprimer le profil « ${p.name} » ?`)) { try { await api('/api/profiles/' + p.id, { method: 'DELETE' }); } catch (e) { toast(e.message); } showProfiles(true); } return; }
+    chooseProfile(p);
+  });
+  $('#manage').onclick = () => showProfiles(!manage);
+  $('#out').onclick = () => { LS.del('ycode'); LS.del('yprofile'); S.code = null; S.profile = null; showLogin(); };
+  if ($('#add')) $('#add').onclick = () => {
+    mount(`<div class="center"><h1 class="serif gold" style="font-size:40px">Nouveau profil</h1><form class="panel" id="f"><input id="n" maxlength="24" placeholder="Prénom" autocomplete="off">
+      <label style="display:flex;gap:10px;align-items:center;justify-content:center"><input type="checkbox" id="k" style="width:auto"> Profil enfants (catalogue restreint)</label>
+      <button class="btn" type="submit">Créer</button><button class="btn ghost" type="button" id="c">Annuler</button><div id="m" class="err"></div></form></div>`);
+    $('#c').onclick = () => showProfiles();
+    $('#f').onsubmit = async (e) => { e.preventDefault(); try { await api('/api/profiles', { method: 'POST', body: { name: $('#n').value, kids: $('#k').checked, color: COLORS[list.length % COLORS.length] } }); showProfiles(); } catch (err) { $('#m').textContent = err.message; } };
+  };
+}
+async function chooseProfile(p) {
+  S.profile = p; LS.set('yprofile', String(p.id));
+  S.favs = new Map(); S.hist = new Map();
+  try {
+    const [f, h] = await Promise.all([api('/api/favs?profile=' + p.id), api('/api/hist?profile=' + p.id)]);
+    f.forEach(x => S.favs.set(key(x), x)); h.forEach(x => S.hist.set(key(x), x));
+  } catch {}
+  shell(); go(location.hash || '#/home', true);
+}
+
+/* ====================== coque et navigation ====================== */
+function shell() {
+  const kids = S.profile.kids;
+  mount(`<header class="top" id="top"><div class="logo serif gold">Yctlflix</div>
+    <nav class="main"><a data-h="#/home">Accueil</a><a data-h="#/films">Films</a><a data-h="#/series">Séries</a>${kids ? '' : '<a data-h="#/direct">Direct</a>'}<a data-h="#/liste">Ma liste</a></nav>
+    <button class="iconbtn" id="sbtn" title="Rechercher">${ICON.search}</button>
+    <button class="iconbtn" id="pbtn" title="Profil"><div class="avatar sm" style="background:${esc(S.profile.color)}">${esc(S.profile.name[0].toUpperCase())}</div></button></header>
+    <main id="main"></main>`);
+  root.querySelectorAll('nav.main a').forEach(a => a.onclick = () => { location.hash = a.dataset.h; });
+  $('#sbtn').onclick = () => { location.hash = '#/search'; };
+  $('#pbtn').onclick = (e) => {
+    e.stopPropagation(); const old = $('.menu'); if (old) return old.remove();
+    const m = document.createElement('div'); m.className = 'menu';
+    m.innerHTML = `<button id="m1">Changer de profil</button><button id="m2">Quitter (changer de code)</button>`;
+    document.body.appendChild(m);
+    $('#m1').onclick = () => { m.remove(); LS.del('yprofile'); S.profile = null; showProfiles(); };
+    $('#m2').onclick = () => { m.remove(); LS.del('ycode'); LS.del('yprofile'); S.code = null; S.profile = null; showLogin(); };
+    setTimeout(() => document.addEventListener('click', () => m.remove(), { once: true }));
+  };
+  window.addEventListener('scroll', () => $('#top')?.classList.toggle('solid', scrollY > 40), { passive: true });
+}
+window.addEventListener('hashchange', () => { if (S.profile) go(location.hash); });
+function go(h, force) {
+  if (!S.profile) return;
+  const route = (h || '#/home').split('?')[0];
+  root.querySelectorAll('nav.main a').forEach(a => a.classList.toggle('on', a.dataset.h === route));
+  S.view?.stop?.(); S.view = null; scrollTo(0, 0);
+  const m = $('#main');
+  const R = { '#/home': viewHome, '#/films': () => viewBrowse('film'), '#/series': () => viewBrowse('serie'), '#/direct': () => viewBrowse('chaine'), '#/liste': viewList, '#/search': viewSearch };
+  if (S.profile.kids && route === '#/direct') return (location.hash = '#/home');
+  (R[route] || viewHome)(m);
+}
+const loading = () => '<div class="state"><div class="spin"></div></div>';
+const errBox = (msg, retryId = 'rt') => `<div class="state"><p class="err">${esc(msg)}</p><button class="btn" id="${retryId}">Réessayer</button></div>`;
+
+/* ====================== cartes ====================== */
+function card(it, extra) {
+  const b = document.createElement('button'); b.className = 'card' + (it.type === 'chaine' ? ' live' : '');
+  const pr = extra?.pos && extra?.dur ? Math.min(100, extra.pos / extra.dur * 100) : 0;
+  b.innerHTML = `<div class="poster">${it.img ? `<img loading="lazy" alt="" src="${esc(it.img)}">` : ''}<div class="ph">${esc((it.title || '?').slice(0, 2))}</div>${it.src ? `<span class="src">Source ${esc(it.src)}</span>` : ''}${pr ? `<div class="prog"><i style="width:${pr}%"></i></div>` : ''}</div><div class="ctitle">${esc(it.title)}</div>`;
+  const im = b.querySelector('img'); if (im) { im.onload = () => b.querySelector('.ph').remove(); im.onerror = () => im.remove(); }
+  b.onclick = () => extra?.onclick ? extra.onclick(it) : openItem(it);
+  return b;
+}
+function resumeOf(it) { return S.hist.get(key(it)) || null; }
+function openItem(it) {
+  if (it.type === 'chaine') return openPlayer({ src: it.src, type: 'chaine', id: it.id, title: it.title, img: it.img });
+  openSheet(it);
+}
+
+/* ====================== accueil ====================== */
+async function viewHome(m) {
+  m.innerHTML = loading(); let stopped = false; S.view = { stop() { stopped = true; } };
+  try {
+    const kids = S.profile.kids;
+    const [films, series, chans, cats] = await Promise.all([
+      api('/api/catalogue?type=film&limit=24'), api('/api/catalogue?type=serie&limit=24'),
+      kids ? { items: [] } : api('/api/catalogue?type=chaine&limit=24'), api('/api/cats?type=film')]);
+    if (stopped) return;
+    const rails = []; const hist = [...S.hist.values()].sort((a, b) => b.ts - a.ts);
+    const hero = (films.items.filter(i => i.img)[0]) || films.items[0];
+    m.innerHTML = '';
+    if (hero) {
+      const h = document.createElement('section'); h.className = 'hero';
+      h.innerHTML = `<div class="bg" style="background-image:url('${esc(hero.img || '')}')"></div><div class="fade"></div><div class="in">${hero.img ? `<img alt="" src="${esc(hero.img)}">` : ''}<div><div class="mu" style="font-size:13px;letter-spacing:.14em;text-transform:uppercase">À l'affiche</div><h2>${esc(hero.title)}</h2><div class="meta">${hero.cat ? esc(hero.cat) : ''}${hero.rating ? ' · ★ ' + esc(hero.rating) : ''}</div><div class="acts"><button class="btn" id="hp">▶ Lecture</button><button class="btn ghost" id="hi">Plus d'infos</button></div></div></div>`;
+      m.appendChild(h);
+      $('#hp').onclick = () => playFilm(hero); $('#hi').onclick = () => openSheet(hero);
+    } else m.insertAdjacentHTML('beforeend', '<div style="height:70px"></div>');
+    const addRail = (title, items, mk) => { if (!items.length) return; const s = document.createElement('section'); s.className = 'rail'; s.innerHTML = `<h3>${esc(title)}</h3><div class="row"></div>`; const r = s.querySelector('.row'); items.forEach(i => r.appendChild(mk(i))); m.appendChild(s); };
+    addRail('Continuer à regarder', hist, (h) => card(h, { pos: h.pos, dur: h.dur, onclick: resumeFromHist }));
+    addRail('Ma liste', [...S.favs.values()], (f) => card(f));
+    addRail('Films récents', films.items, (i) => card(i, resumeOf(i)));
+    addRail('Séries récentes', series.items, (i) => card(i, resumeOf(i)));
+    addRail('Chaînes en direct', chans.items, (i) => card(i));
+    if (!films.items.length && !series.items.length && !chans.items.length)
+      m.insertAdjacentHTML('beforeend', '<div class="state"><p class="mu">Le catalogue est vide pour le moment. L\'administrateur doit lancer l\'import.</p></div>');
+    // quelques catégories de films, chargées au fil de l'eau
+    for (const c of cats.slice(0, 4)) {
+      if (stopped) return;
+      try { const j = await api('/api/catalogue?type=film&limit=20&cat=' + encodeURIComponent(c.cat)); if (!stopped) addRail(c.cat, j.items, (i) => card(i, resumeOf(i))); } catch {}
+    }
+  } catch (e) { m.innerHTML = errBox(e.message); $('#rt').onclick = () => viewHome(m); }
+}
+function resumeFromHist(h) {
+  if (h.type === 'film') return playFilm(h);
+  if (h.type === 'serie' && h.meta?.epId) return playEpisode({ ...h, id: h.id }, { id: h.meta.epId, ext: h.meta.ext, season: h.meta.season, num: h.meta.num, title: h.meta.eptitle }, h.pos);
+  openSheet(h);
+}
+
+/* ====================== parcourir (grille infinie) ====================== */
+async function viewBrowse(type) {
+  const m = $('#main'); const S2 = { src: '', cat: '', sort: 'added' }; let counts = S.counts;
+  const label = { film: 'Films', serie: 'Séries', chaine: 'Direct' }[type];
+  m.innerHTML = `<div class="bar"><h1>${label}</h1><select id="cat"><option value="">Toutes les catégories</option></select><select id="sort"><option value="added">Récents</option><option value="az">A → Z</option></select></div><div class="bar" style="padding-top:0"><div class="chips" id="chips"></div></div><div id="g" class="grid ${type === 'chaine' ? 'live' : ''}"></div><div id="more"></div>`;
+  try { counts = S.counts = await api('/api/counts'); } catch {}
+  const tot = counts ? counts.all[type] : 0;
+  const chips = [['', `Toutes (${tot.toLocaleString('fr-FR')})`]];
+  if (counts && !S.profile.kids) for (const n of counts.sources) chips.push([String(n), `Source ${n} (${(counts.bySource[n]?.[type] || 0).toLocaleString('fr-FR')})`]);
+  $('#chips').innerHTML = chips.map(([v, t]) => `<button class="chip ${v === S2.src ? 'on' : ''}" data-v="${v}">${esc(t)}</button>`).join('');
+  api(`/api/cats?type=${type}`).then(cs => { $('#cat').innerHTML = '<option value="">Toutes les catégories</option>' + cs.map(c => `<option value="${esc(c.cat)}">${esc(c.cat)} (${c.n})</option>`).join(''); }).catch(() => {});
+  const grid = makeGrid($('#g'), $('#more'), (off) => `/api/catalogue?type=${type}&offset=${off}&limit=60&sort=${S2.sort}${S2.src ? '&src=' + S2.src : ''}${S2.cat ? '&cat=' + encodeURIComponent(S2.cat) : ''}`);
+  S.view = { stop: grid.stop };
+  root.querySelectorAll('#chips .chip').forEach(c => c.onclick = () => { S2.src = c.dataset.v; root.querySelectorAll('#chips .chip').forEach(x => x.classList.toggle('on', x === c)); grid.reset(); });
+  $('#cat').onchange = (e) => { S2.cat = e.target.value; grid.reset(); };
+  $('#sort').onchange = (e) => { S2.sort = e.target.value; grid.reset(); };
+  grid.reset();
+}
+function makeGrid(box, foot, urlOf, empty = 'Rien à afficher ici.') {
+  let offset = 0, busy = false, done = false, tok = 0, ctrl = null, first = true;
+  const io = new IntersectionObserver(() => check(), { rootMargin: '1600px' }); io.observe(foot);
+  const onScroll = () => check(); addEventListener('scroll', onScroll, { passive: true });
+  function check() { if (!busy && !done && foot.isConnected && foot.getBoundingClientRect().top < innerHeight + 1600) load(); }
+  async function load() {
+    busy = true; const my = tok; ctrl = new AbortController();
+    if (first) foot.innerHTML = loading();
+    try {
+      const j = await api(urlOf(offset), { signal: ctrl.signal });
+      if (my !== tok) return;
+      j.items.forEach(i => box.appendChild(card(i, resumeOf(i))));
+      offset += j.items.length; if (j.items.length < 60) done = true;
+      if (first && !j.items.length) foot.innerHTML = `<div class="state mu">${esc(empty)}</div>`; else foot.innerHTML = '';
+      first = false;
+    } catch (e) {
+      if (e.name === 'AbortError') return;
+      foot.innerHTML = errBox(e.message, 'gr'); $('#gr').onclick = () => { foot.innerHTML = ''; busy = false; load(); }; return;
+    } finally { if (my === tok) busy = false; }
+    setTimeout(check, 0);
+  }
+  return {
+    reset() { tok++; ctrl?.abort(); box.innerHTML = ''; foot.innerHTML = ''; offset = 0; done = false; busy = false; first = true; load(); },
+    stop() { tok++; ctrl?.abort(); io.disconnect(); removeEventListener('scroll', onScroll); },
+  };
+}
+
+/* ====================== recherche ====================== */
+function viewSearch(m) {
+  let type = 'film', q = (new URLSearchParams((location.hash.split('?')[1]) || '')).get('q') || '', timer, grid = null;
+  const kids = S.profile.kids;
+  m.innerHTML = `<div class="search"><input id="q" placeholder="Rechercher un film, une série, une chaîne…" value="${esc(q)}" autocomplete="off" autofocus></div>
+    <div class="bar"><div class="chips" id="tabs"><button class="chip on" data-t="film">Films</button><button class="chip" data-t="serie">Séries</button>${kids ? '' : '<button class="chip" data-t="chaine">Chaînes</button>'}</div></div>
+    <div id="g" class="grid"></div><div id="more"></div>`;
+  const run = () => { grid?.stop(); const box = $('#g'); box.innerHTML = ''; $('#more').innerHTML = ''; box.className = 'grid' + (type === 'chaine' ? ' live' : '');
+    if (q.trim().length < 2) { $('#more').innerHTML = '<div class="state mu">Tapez au moins deux lettres.</div>'; return; }
+    grid = makeGrid(box, $('#more'), (off) => `/api/catalogue?type=${type}&q=${encodeURIComponent(q)}&offset=${off}&limit=60`, 'Aucun résultat. Essayez une autre orthographe.'); grid.reset(); };
+  S.view = { stop() { clearTimeout(timer); grid?.stop(); } };
+  $('#q').oninput = (e) => { q = e.target.value; clearTimeout(timer); timer = setTimeout(run, 250); };
+  root.querySelectorAll('#tabs .chip').forEach(c => c.onclick = () => { type = c.dataset.t; root.querySelectorAll('#tabs .chip').forEach(x => x.classList.toggle('on', x === c)); run(); });
+  $('#q').focus(); run();
+}
+
+/* ====================== ma liste ====================== */
+function viewList(m) {
+  const items = [...S.favs.values()];
+  m.innerHTML = `<div class="bar"><h1>Ma liste</h1></div>`;
+  if (!items.length) { m.insertAdjacentHTML('beforeend', '<div class="state mu">Votre liste est vide. Ajoutez des titres depuis leur fiche.</div>'); return; }
+  const g = document.createElement('div'); g.className = 'grid'; items.forEach(i => g.appendChild(card(i, resumeOf(i)))); m.appendChild(g);
+}
+async function toggleFav(it, btn) {
+  const k = key(it), has = S.favs.has(k);
+  try {
+    if (has) { await api(`/api/favs?profile=${S.profile.id}&src=${it.src}&type=${it.type}&id=${encodeURIComponent(it.id)}`, { method: 'DELETE' }); S.favs.delete(k); }
+    else { await api('/api/favs', { method: 'POST', body: { profile: S.profile.id, src: it.src, type: it.type, id: it.id, title: it.title, img: it.img } }); S.favs.set(k, { src: it.src, type: it.type, id: it.id, title: it.title, img: it.img }); }
+    if (btn) btn.textContent = S.favs.has(k) ? '✓ Dans ma liste' : '+ Ma liste';
+  } catch (e) { toast(e.message); }
+}
+
+/* ====================== fiche détail ====================== */
+async function openSheet(it) {
+  $('.modal')?.remove();
+  const mo = document.createElement('div'); mo.className = 'modal';
+  mo.innerHTML = `<div class="sheet"><button class="iconbtn x" aria-label="Fermer">${ICON.close}</button><div class="head"><img alt="" src="${esc(it.img || '')}" onerror="this.style.visibility='hidden'"><div style="flex:1;min-width:220px"><h2>${esc(it.title)}</h2><div class="meta" id="meta"><span>Source ${esc(it.src)}</span>${it.cat ? `<span>${esc(it.cat)}</span>` : ''}${it.rating ? `<span>★ ${esc(it.rating)}</span>` : ''}</div><p class="plot" id="plot">${'<span class="mu">Chargement…</span>'}</p><div class="acts" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px" id="acts"></div></div></div><div class="eps" id="eps"></div></div>`;
+  document.body.appendChild(mo);
+  const close = () => mo.remove(); mo.onclick = (e) => { if (e.target === mo) close(); }; mo.querySelector('.x').onclick = close;
+  const acts = $('#acts', mo), fav = document.createElement('button'); fav.className = 'btn ghost'; fav.textContent = S.favs.has(key(it)) ? '✓ Dans ma liste' : '+ Ma liste'; fav.onclick = () => toggleFav(it, fav);
+  let info = null;
+  try { info = await api(`/api/info/${it.type}/${it.src}/${encodeURIComponent(it.id)}`); } catch (e) { $('#plot', mo).innerHTML = `<span class="err">${esc(e.message)}</span>`; }
+  if (!mo.isConnected) return;
+  if (info) {
+    $('#plot', mo).textContent = info.plot || 'Pas de description.';
+    $('#meta', mo).insertAdjacentHTML('beforeend', [info.year && `<span>${esc(String(info.year).slice(0, 4))}</span>`, info.genre && `<span>${esc(info.genre)}</span>`, info.duration && `<span>${esc(info.duration)}</span>`].filter(Boolean).join(''));
+  }
+  if (it.type === 'film') {
+    const h = resumeOf(it), p = document.createElement('button'); p.className = 'btn';
+    p.textContent = h && h.pos > 30 ? `▶ Reprendre (${fmtTime(h.pos)})` : '▶ Lecture'; p.onclick = () => { close(); playFilm(it, h?.pos || 0); }; acts.append(p);
+    if (h && h.pos > 30) { const r = document.createElement('button'); r.className = 'btn ghost'; r.textContent = 'Depuis le début'; r.onclick = () => { close(); playFilm(it, 0); }; acts.append(r); }
+    acts.append(fav);
+    if (S.me?.canDownload) { const d = document.createElement('button'); d.className = 'btn ghost'; d.textContent = '⬇ Télécharger'; d.onclick = () => download(it, d); acts.append(d); }
+  } else {
+    acts.append(fav);
+    const eps = info?.episodes || {}, seasons = Object.keys(eps).sort((a, b) => a - b), box = $('#eps', mo);
+    if (!seasons.length) { box.innerHTML = '<p class="mu">Aucun épisode disponible.</p>'; return; }
+    const h = resumeOf(it);
+    box.innerHTML = `<div style="display:flex;gap:10px;align-items:center;margin-bottom:6px"><select id="ss">${seasons.map(s => `<option value="${esc(s)}">Saison ${esc(s)}</option>`).join('')}</select></div><div id="el"></div>`;
+    const draw = () => {
+      const s = $('#ss', mo).value, list = eps[s] || [];
+      $('#el', mo).innerHTML = ''; list.forEach(ep => {
+        const cur = h?.meta?.epId === ep.id, r = document.createElement('div'); r.className = 'ep';
+        r.innerHTML = `<b>${esc(ep.num)}</b><span>${esc(ep.title)}<br><span class="mu">${esc(ep.duration || '')}${cur && h.pos > 30 ? ' · reprise à ' + fmtTime(h.pos) : ''}</span></span>`;
+        const b = document.createElement('button'); b.className = 'btn sm'; b.textContent = cur && h.pos > 30 ? 'Reprendre' : 'Lecture';
+        b.onclick = () => { close(); playEpisode(it, { ...ep, season: s }, cur ? h.pos : 0); }; r.append(b);
+        if (S.me?.canDownload) { const d = document.createElement('button'); d.className = 'btn ghost sm'; d.textContent = '⬇'; d.title = 'Télécharger'; d.onclick = () => download({ src: it.src, type: 'episode', id: ep.id, ext: ep.ext, title: `${it.title} S${s}E${ep.num}` }, d); r.append(d); }
+        $('#el', mo).append(r);
+      });
+    };
+    $('#ss', mo).onchange = draw;
+    if (h?.meta?.season && eps[h.meta.season]) $('#ss', mo).value = h.meta.season;
+    draw();
+  }
+}
+async function download(it, btn) {
+  btn.disabled = true;
+  try {
+    const t = await api('/api/ticket', { method: 'POST', body: { src: it.src, type: it.type, id: it.id, ext: it.ext, download: true, device: dev } });
+    const a = document.createElement('a'); a.href = t.download + '?name=' + encodeURIComponent(it.title); a.download = ''; document.body.appendChild(a); a.click(); a.remove();
+    toast('Téléchargement lancé…');
+  } catch (e) { toast(e.message); } finally { btn.disabled = false; }
+}
+const playFilm = (it, pos) => openPlayer({ src: it.src, type: 'film', id: it.id, ext: it.ext, title: it.title, img: it.img, startPos: pos ?? resumeOf(it)?.pos ?? 0, hist: { type: 'film', id: it.id } });
+const playEpisode = (serie, ep, pos) => openPlayer({ src: serie.src, type: 'episode', id: ep.id, ext: ep.ext, title: `${serie.title} — S${ep.season}E${ep.num}`, img: serie.img, startPos: pos || 0,
+  hist: { type: 'serie', id: serie.id, seriesTitle: serie.title, meta: { epId: ep.id, ext: ep.ext, season: ep.season, num: ep.num, eptitle: ep.title } } });
+
+/* ====================== lecteur ====================== */
+const LANG = { fre: 'fr', fra: 'fr', eng: 'en', ger: 'de', deu: 'de', spa: 'es', ita: 'it', por: 'pt', ara: 'ar', jpn: 'ja', kor: 'ko', rus: 'ru', tur: 'tr', dut: 'nl', nld: 'nl', pol: 'pl', chi: 'zh', zho: 'zh', und: '' };
+function langName(code) {
+  if (!code) return null; const c = LANG[code] ?? code; if (!c) return null;
+  try { const n = new Intl.DisplayNames(['fr'], { type: 'language' }).of(c); if (n && n !== c) return n.charAt(0).toUpperCase() + n.slice(1); } catch {}
+  return code.toUpperCase();
+}
+const isFr = (l) => ['fr', 'fre', 'fra'].includes(String(l || '').toLowerCase());
+let CUR = null;
+function closePlayer() { if (CUR) { CUR.close(); CUR = null; } }
+document.addEventListener('keydown', (e) => { if (CUR && !/INPUT|SELECT/.test(e.target.tagName)) CUR.key(e); });
+addEventListener('beforeunload', () => { if (CUR) CUR.release(true); });
+
+function openPlayer(o) {
+  closePlayer();
+  const el = document.createElement('div'); el.className = 'player';
+  el.innerHTML = `<video playsinline preload="auto"></video>
+    <div class="ov"><div class="t"><button class="iconbtn" data-a="close" title="Fermer">${ICON.close}</button><div class="ttl">${esc(o.title)}</div></div>
+    <div class="b"><div class="seek"><span id="tc">0:00</span><input type="range" id="sk" min="0" max="1000" value="0"><span id="td">0:00</span></div>
+    <div class="ctl"><button class="iconbtn" data-a="pp" id="pp">${ICON.pause}</button><button class="iconbtn" data-a="b10">${ICON.back10}</button><button class="iconbtn" data-a="f10">${ICON.fwd10}</button>
+    <button class="iconbtn" data-a="mute" id="mb">${ICON.vol}</button><input type="range" class="vol" id="vl" min="0" max="100" value="100"><span class="sp"></span>
+    <button class="iconbtn" data-a="tracks" title="Langue et sous-titres">${ICON.tracks}</button><button class="iconbtn" data-a="pip" title="Image dans l'image">${ICON.pip}</button><button class="iconbtn" data-a="full" title="Plein écran">${ICON.full}</button></div></div></div>
+    <div class="centerbox" id="cb"></div><div class="banner hide" id="bn"></div>`;
+  document.body.appendChild(el);
+  const v = $('video', el), live = o.type === 'chaine';
+  const P = { ticket: null, probe: null, mode: null, offset: 0, hls: null, hlsErr: 0, retries: 0, gen: 0, state: 'loading', audioIdx: 0, subIdx: -1, startT: 0, timers: [], released: false, userPaused: false, tried: new Set() };
+  const setT = (f, ms) => { const t = setTimeout(f, ms); P.timers.push(t); return t; };
+  const clearTimers = () => { P.timers.forEach(clearTimeout); P.timers = []; };
+  const cb = $('#cb', el), bn = $('#bn', el);
+  const centre = (html) => { cb.innerHTML = html; };
+  const banner = (txt, btn) => { if (!txt) return bn.classList.add('hide'); bn.classList.remove('hide'); bn.innerHTML = `<span>${esc(txt)}</span>${btn ? `<button class="btn sm" id="bb">${esc(btn[0])}</button>` : ''}`; if (btn) $('#bb', bn).onclick = btn[1]; };
+  const showLoading = () => { P.state = 'loading'; centre('<div class="spin"></div>'); };
+  const showError = (msg, canRetry = true) => { P.state = 'error'; clearTimers(); centre(`<div class="msg">${esc(msg)}</div><div style="display:flex;gap:10px">${canRetry ? '<button class="btn" id="re">Réessayer</button>' : ''}<button class="btn ghost" id="cl">Fermer</button></div>`);
+    $('#re', cb)?.addEventListener('click', () => start(P.curPos())); $('#cl', cb).onclick = () => api_close(); };
+  const api_close = () => { saveHist(true); closePlayer(); };
+  P.curPos = () => P.mode === 'ff' ? P.offset + (v.currentTime || 0) : (v.currentTime || 0);
+  P.duration = () => P.mode === 'ff' ? (P.probe?.duration || 0) : (isFinite(v.duration) ? v.duration : (P.probe?.duration || 0));
+
+  /* ---- historique ---- */
+  let lastSave = 0;
+  function saveHist(force) {
+    if (live || !o.hist || !S.profile) return; const pos = P.curPos(), dur = P.duration();
+    if (!force && Date.now() - lastSave < 15000) return; if (pos < 5 && !force) return; lastSave = Date.now();
+    if (pos < 5) return;
+    const body = { profile: S.profile.id, src: o.src, type: o.hist.type, id: o.hist.id, title: o.hist.seriesTitle || o.title, img: o.img, pos, dur, meta: o.hist.meta || null };
+    const done = dur > 60 && pos / dur > 0.95;
+    const k = `${o.src}/${o.hist.type}/${o.hist.id}`;
+    if (done) { S.hist.delete(k); fetch(`/api/hist?profile=${S.profile.id}&src=${o.src}&type=${o.hist.type}&id=${encodeURIComponent(o.hist.id)}`, { method: 'DELETE', keepalive: true, headers: { 'X-Code': S.code, 'X-Device': dev } }); return; }
+    S.hist.set(k, { src: o.src, type: o.hist.type, id: o.hist.id, title: body.title, img: o.img, pos, dur, meta: body.meta, ts: Date.now() });
+    fetch('/api/hist', { method: 'POST', keepalive: true, headers: { 'X-Code': S.code, 'X-Device': dev, 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).catch(() => {});
+  }
+  P.release = (ka) => { if (P.released || !P.ticket) return; P.released = true; fetch('/api/release', { method: 'POST', keepalive: ka, headers: { 'X-Code': S.code, 'X-Device': dev, 'Content-Type': 'application/json' }, body: JSON.stringify({ n: P.ticket.n }) }).catch(() => {}); };
+
+  /* ---- arrêt propre d'une lecture (avant de changer de mode ou de relancer) ---- */
+  function teardown() {
+    P.gen++; clearTimers(); if (P.hls) { try { P.hls.destroy(); } catch {} P.hls = null; }
+    try { v.pause(); } catch {} v.removeAttribute('src'); try { v.load(); } catch {}
+    banner(null);
+  }
+  /* ---- démarrage : ticket, analyse, choix du mode ---- */
+  async function start(pos = 0) {
+    teardown(); showLoading(); const gen = P.gen;
+    try {
+      if (!P.ticket) {
+        P.ticket = await api('/api/ticket', { method: 'POST', body: { src: o.src, type: o.type, id: o.id, ext: o.ext, device: dev } });
+        P.released = false;
+      }
+      if (gen !== P.gen) return;
+      if (P.ticket.ffmpeg && !P.probe && !P.probeFailed) {
+        try { P.probe = await (await fetch(P.ticket.probe)).json(); if (P.probe.error) { P.probe = null; P.probeFailed = true; } } catch { P.probeFailed = true; }
+      }
+      if (gen !== P.gen) return;
+      decide(pos);
+    } catch (e) {
+      if (gen !== P.gen) return;
+      if (e.offline) return showError(e.message);
+      showError(e.status === 403 || e.status === 429 || e.status === 404 ? e.message : e.message);
+    }
+  }
+  const nativeHls = () => !!v.canPlayType('application/vnd.apple.mpegurl');
+  function decide(pos) {
+    const pr = P.probe, canFF = !!P.ticket.ffmpeg;
+    const ext = String(P.ticket.ext || o.ext || '').toLowerCase();
+    // piste audio souhaitée : le français s'il existe
+    if (pr?.tracks?.length && P.audioIdx === 0 && !P.audioChosen) { const i = pr.tracks.findIndex(t => isFr(t.lang)); if (i > 0) P.audioIdx = i; P.audioChosen = true; }
+    const audioBad = pr && pr.hasAudio && !pr.audioPlayable, videoBad = pr && pr.video && !pr.videoPlayable;
+    if (pr && !pr.hasAudio) setT(() => banner('Ce flux n\'envoie aucun son'), 800);
+    let mode;
+    if (live) mode = (audioBad || videoBad) && canFF ? 'ff' : 'hls';
+    else {
+      const direct = ['mp4', 'm4v', 'webm', 'mov'].includes(ext) && !audioBad && !videoBad && P.audioIdx === 0 && !P.forceFF;
+      mode = direct || !canFF ? 'file' : 'ff';
+    }
+    if ((audioBad || videoBad) && !canFF) return showError(audioBad ? 'Ce flux a un format audio que votre navigateur ne lit pas, et la conversion n\'est pas disponible sur ce serveur (ffmpeg est absent).' : 'Ce flux a un format vidéo que votre navigateur ne lit pas, et la conversion n\'est pas disponible sur ce serveur.', false);
+    play(mode, pos);
+  }
+  function play(mode, pos) {
+    P.mode = mode; P.offset = mode === 'ff' ? (live ? 0 : Math.floor(pos || 0)) : 0; const gen = ++P.gen; showLoading(); P.startT = Date.now();
+    P.noSoundChecked = false;
+    const startTimeout = setT(() => { if (P.gen === gen && P.state === 'loading') showError('La lecture ne démarre pas. Le fournisseur est peut-être occupé ou indisponible.'); }, 15000);
+    const t = P.ticket;
+    if (mode === 'ff') {
+      v.src = `${t.ff}?t=${P.offset}&a=${P.audioIdx}${P.probe && P.probe.video && !P.probe.videoPlayable ? '&vt=1' : ''}`;
+    } else if (mode === 'file') {
+      v.src = t.file; if (pos > 1) v.addEventListener('loadedmetadata', () => { try { v.currentTime = pos; } catch {} }, { once: true });
+    } else if (window.Hls && Hls.isSupported() && !nativeHls()) {
+      const h = P.hls = new Hls({ maxBufferLength: 30, liveSyncDurationCount: 3, enableWorker: true });
+      h.loadSource(t.hls); h.attachMedia(v);
+      h.on(Hls.Events.ERROR, (_, d) => {
+        if (!d.fatal || P.gen !== gen) return;
+        P.hlsErr++;
+        if (P.hlsErr > 3) return fallback('hls');
+        if (d.type === Hls.ErrorTypes.NETWORK_ERROR) setT(() => h.startLoad(), 800 * P.hlsErr);
+        else if (d.type === Hls.ErrorTypes.MEDIA_ERROR) { if (P.hlsErr >= 2) h.swapAudioCodec(); h.recoverMediaError(); }
+        else fallback('hls');
+      });
+    } else if (nativeHls()) v.src = t.hls;
+    else if (t.ffmpeg) return fallback('hls');
+    else return showError('Votre navigateur ne sait pas lire ce flux en direct.');
+    v.volume = Number(LS.get('yvol', '1')); v.muted = LS.get('ymuted') === '1'; syncVol();
+    v.play().then(() => {}).catch((e) => {
+      if (P.gen !== gen) return;
+      if (e.name === 'NotAllowedError') { clearTimeout(startTimeout); P.state = 'tap'; centre('<button class="btn" id="tap" style="font-size:18px;padding:16px 34px">▶ Touchez pour lancer</button>'); $('#tap', cb).onclick = () => { v.play().catch(() => {}); }; }
+    });
+  }
+  /* ---- repli : mode converti, ou mode alternatif ---- */
+  function fallback(why) {
+    if (P.fell && P.fell >= 2) return showError('Impossible de lire ce flux. Réessayez dans un instant.');
+    P.fell = (P.fell || 0) + 1;
+    if (P.ticket?.ffmpeg && P.mode !== 'ff') { P.forceFF = true; banner('Conversion du flux en cours…'); return play('ff', live ? 0 : P.curPos()); }
+    showError(live ? 'Cette chaîne est momentanément indisponible.' : 'Ce fichier ne peut pas être lu par votre navigateur.');
+  }
+  /* ---- événements vidéo ---- */
+  v.addEventListener('playing', () => {
+    if (P.state !== 'playing') { P.state = 'playing'; centre(''); P.retries = 0; }
+    banner(null); updatePP(); if (!P.noSoundChecked) { P.noSoundChecked = true; const g = P.gen; setT(() => { if (g === P.gen) checkSound(); }, 4000); }
+  });
+  v.addEventListener('pause', updatePP); v.addEventListener('play', updatePP);
+  let waitT; v.addEventListener('waiting', () => { clearTimeout(waitT); waitT = setTimeout(() => { if (P.state === 'playing') centre('<div class="spin"></div>'); }, 1200); });
+  v.addEventListener('stalled', () => { clearTimeout(waitT); waitT = setTimeout(() => { if (P.state === 'playing' && !v.paused) centre('<div class="spin"></div>'); }, 2500); });
+  v.addEventListener('canplay', () => { clearTimeout(waitT); if (P.state === 'playing') centre(''); });
+  v.addEventListener('timeupdate', () => { if (P.state === 'playing' && cb.firstChild && !v.paused && !v.seeking) { clearTimeout(waitT); centre(''); } updateSeek(); saveHist(false); });
+  v.addEventListener('volumechange', () => { syncVol(); soundBadge(); });
+  v.addEventListener('ended', () => { if (live) return recover('ended'); saveHist(true); });
+  v.addEventListener('error', () => {
+    if (P.state === 'error' || !v.getAttribute('src')) return;
+    const pos = P.curPos();
+    if (P.mode === 'file') return fallback('file');
+    if (P.mode === 'ff') { if (P.retries < 3 && (Date.now() - P.startT > 3000)) return recover('ff'); return showError(live ? 'Cette chaîne est momentanément indisponible.' : 'La lecture a été interrompue.'); }
+    if (P.mode === 'hls') return fallback('hls');
+  });
+  /* coupure en cours de lecture : reprise à la position exacte, 3 fois */
+  function recover(why) {
+    if (P.retries >= 3) return showError(live ? 'Cette chaîne est momentanément indisponible.' : 'La connexion a été coupée.');
+    P.retries++; const pos = P.curPos(); banner(`Reconnexion… (${P.retries}/3)`);
+    setT(() => start(pos), 1200 * P.retries);
+  }
+  /* ---- son ---- */
+  function soundBadge() {
+    const mute = v.muted || v.volume === 0; let b = $('#mutebadge', el);
+    if (mute && P.state === 'playing') { if (!b) { b = document.createElement('div'); b.id = 'mutebadge'; b.className = 'banner'; b.style.top = '120px'; b.innerHTML = '<span>🔇 Son coupé</span><button class="btn sm">Réactiver</button>'; el.appendChild(b); b.querySelector('button').onclick = () => { v.muted = false; if (v.volume === 0) v.volume = 1; LS.set('ymuted', '0'); }; } }
+    else b?.remove();
+  }
+  function checkSound() {
+    if (v.paused || P.state !== 'playing') return; const pr = P.probe; let none = false;
+    if (typeof v.webkitAudioDecodedByteCount === 'number' && v.webkitAudioDecodedByteCount === 0) none = true;
+    if (v.mozHasAudio === false) none = true;
+    if (v.audioTracks && v.audioTracks.length === 0 && 'audioTracks' in v && /Safari/.test(navigator.userAgent) && !/Chrome|Chromium/.test(navigator.userAgent)) none = true;
+    if (!none) return;
+    let cause = 'Ce flux n\'a peut-être pas de piste audio.';
+    if (pr && !pr.hasAudio) cause = 'Ce flux n\'envoie aucun son.';
+    else if (pr && pr.audio && !pr.audioPlayable) cause = `Le format audio (${pr.audio.toUpperCase()}) n'est pas lu par votre navigateur.`;
+    if (pr && pr.hasAudio && !pr.audioPlayable && P.ticket.ffmpeg && P.mode !== 'ff') { P.forceFF = true; return play('ff', live ? 0 : P.curPos()); }
+    banner('Aucun son détecté — ' + cause);
+  }
+  function syncVol() { $('#vl', el).value = v.muted ? 0 : v.volume * 100; $('#mb', el).innerHTML = v.muted || v.volume === 0 ? ICON.mute : ICON.vol; if (v.volume > 0) LS.set('yvol', String(v.volume)); LS.set('ymuted', v.muted ? '1' : '0'); }
+  function updatePP() { $('#pp', el).innerHTML = v.paused ? ICON.play : ICON.pause; }
+  function updateSeek() {
+    const d = P.duration(), c = P.curPos(); const sk = $('#sk', el);
+    if (live || !d) { sk.style.visibility = 'hidden'; $('#tc', el).textContent = live ? '● EN DIRECT' : fmtTime(c); $('#td', el).textContent = ''; return; }
+    sk.style.visibility = 'visible'; if (!P.seeking) sk.value = Math.round(c / d * 1000); $('#tc', el).textContent = fmtTime(c); $('#td', el).textContent = fmtTime(d);
+  }
+  function seekTo(t) {
+    const d = P.duration(); t = Math.max(0, Math.min(d || t, t));
+    if (P.mode === 'ff') { P.retries = 0; return play('ff', t); }
+    try { v.currentTime = t; } catch {}
+  }
+  const sk = $('#sk', el);
+  sk.oninput = () => { P.seeking = true; $('#tc', el).textContent = fmtTime(sk.value / 1000 * P.duration()); };
+  sk.onchange = () => { P.seeking = false; seekTo(sk.value / 1000 * P.duration()); };
+  $('#vl', el).oninput = (e) => { v.volume = e.target.value / 100; v.muted = v.volume === 0; };
+  /* ---- menu langues / sous-titres ---- */
+  function tracksMenu() {
+    let m = $('.pmenu', el); if (m) return m.remove(); m = document.createElement('div'); m.className = 'pmenu'; el.appendChild(m);
+    const pr = P.probe, tr = pr?.tracks || [], sb = pr?.subs || [];
+    let h = '<h4>Langue audio</h4>';
+    h += tr.length ? tr.map((t, i) => `<button data-au="${i}" class="${i === P.audioIdx ? 'on' : ''}">${esc(langName(t.lang) || ('Piste ' + (i + 1)))}${t.title ? ' · ' + esc(t.title) : ''}${t.channels > 2 ? ' · ' + t.channels + ' voies' : ''}</button>`).join('') : '<button disabled>Une seule piste</button>';
+    h += '<h4>Sous-titres</h4><button data-su="-1" class="' + (P.subIdx < 0 ? 'on' : '') + '">Désactivés</button>';
+    h += sb.map((t, i) => `<button data-su="${i}" class="${i === P.subIdx ? 'on' : ''}">${esc(langName(t.lang) || ('Piste ' + (i + 1)))}${t.title ? ' · ' + esc(t.title) : ''}</button>`).join('');
+    m.innerHTML = h;
+    m.querySelectorAll('[data-au]').forEach(b => b.onclick = () => { const i = +b.dataset.au; m.remove(); if (i === P.audioIdx) return; P.audioIdx = i; P.audioChosen = true; P.forceFF = true; if (!P.ticket.ffmpeg) return banner('Changer de langue demande la conversion (ffmpeg absent du serveur)'); play('ff', live ? 0 : P.curPos()); });
+    m.querySelectorAll('[data-su]').forEach(b => b.onclick = () => { m.remove(); setSub(+b.dataset.su); });
+  }
+  async function setSub(i) {
+    P.subIdx = i; [...v.querySelectorAll('track')].forEach(t => t.remove()); [...v.textTracks].forEach(t => t.mode = 'disabled'); if (i < 0) return;
+    banner('Chargement des sous-titres…');
+    try {
+      const txt = await (await fetch(`${P.ticket.subs}?s=${i}`)).text(); if (P.subIdx !== i) return;
+      const off = P.mode === 'ff' ? P.offset : 0;
+      const shifted = off ? shiftVtt(txt, off) : txt;
+      const tk = document.createElement('track'); tk.kind = 'subtitles'; tk.label = 'Sous-titres'; tk.default = true; tk.src = URL.createObjectURL(new Blob([shifted], { type: 'text/vtt' }));
+      v.appendChild(tk); tk.track.mode = 'showing'; banner(null);
+    } catch { banner('Sous-titres indisponibles pour ce flux'); setT(() => banner(null), 3000); }
+  }
+  /* ---- commandes ---- */
+  function fullscreen() {
+    const d = document; if (d.fullscreenElement || d.webkitFullscreenElement) return (d.exitFullscreen || d.webkitExitFullscreen).call(d);
+    if (el.requestFullscreen) el.requestFullscreen().catch(() => {}); else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen(); else if (v.webkitEnterFullscreen) v.webkitEnterFullscreen();
+  }
+  async function pip() { try { if (document.pictureInPictureElement) await document.exitPictureInPicture(); else if (v.requestPictureInPicture) await v.requestPictureInPicture(); else if (v.webkitSetPresentationMode) v.webkitSetPresentationMode('picture-in-picture'); else toast('L\'image dans l\'image n\'est pas disponible ici.'); } catch { toast('L\'image dans l\'image n\'est pas disponible ici.'); } }
+  const act = {
+    close: api_close, pp: () => v.paused ? v.play().catch(() => {}) : v.pause(),
+    b10: () => seekTo(P.curPos() - 10), f10: () => seekTo(P.curPos() + 10), mute: () => { v.muted = !v.muted; if (!v.muted && v.volume === 0) v.volume = 1; },
+    tracks: tracksMenu, pip, full: fullscreen,
+  };
+  el.querySelectorAll('[data-a]').forEach(b => b.onclick = (e) => { e.stopPropagation(); act[b.dataset.a](); });
+  v.onclick = () => { if (P.state === 'tap') return v.play().catch(() => {}); act.pp(); };
+  let idleT; const wake = () => { el.classList.remove('idle'); clearTimeout(idleT); idleT = setTimeout(() => { if (!v.paused && !$('.pmenu', el)) el.classList.add('idle'); }, 3500); };
+  el.addEventListener('mousemove', wake); el.addEventListener('touchstart', wake, { passive: true }); wake();
+  const key = (e) => { wake(); const k = e.key;
+    if (k === ' ' || k === 'k') { e.preventDefault(); act.pp(); } else if (k === 'ArrowRight') act.f10(); else if (k === 'ArrowLeft') act.b10(); else if (k === 'm') act.mute();
+    else if (k === 'f') fullscreen(); else if (k === 'Escape' && !(document.fullscreenElement || document.webkitFullscreenElement)) api_close(); };
+  const saver = setInterval(() => saveHist(false), 5000);
+  CUR = { key, release: (ka) => P.release(ka), close() {
+    saveHist(true); clearInterval(saver); clearTimeout(idleT); teardown(); P.release(false);
+    if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
+    el.remove(); if (S.view?.refresh) S.view.refresh(); },
+  };
+  window.__player = P; // utile pour le diagnostic
+  start(o.startPos || 0);
+}
+function shiftVtt(txt, off) {
+  const f = (s) => { const m = s.match(/(?:(\d+):)?(\d+):(\d+)[.,](\d+)/); if (!m) return null; return (+(m[1] || 0)) * 3600 + (+m[2]) * 60 + (+m[3]) + (+('0.' + m[4])); };
+  const w = (t) => { const h = Math.floor(t / 3600), mi = Math.floor(t % 3600 / 60), s = (t % 60).toFixed(3); return String(h).padStart(2, '0') + ':' + String(mi).padStart(2, '0') + ':' + (s < 10 ? '0' : '') + s; };
+  const blocks = txt.replace(/\r/g, '').split(/\n\n+/); const out = ['WEBVTT'];
+  for (const b of blocks) { const lines = b.split('\n'); const i = lines.findIndex(l => l.includes('-->')); if (i < 0) continue;
+    const [a, c] = lines[i].split('-->'); const sa = f(a), sc = f(c.trim().split(' ')[0]); if (sa == null || sc == null) continue;
+    if (sc - off <= 0) continue; lines[i] = `${w(Math.max(0, sa - off))} --> ${w(sc - off)}`; out.push(lines.slice(i).join('\n')); }
+  return out.join('\n\n') + '\n';
+}
+
+/* ====================== démarrage ====================== */
+async function boot() {
+  mount(loading());
+  if (!S.code) return showLogin();
+  try { S.me = await api('/api/me'); }
+  catch (e) { if (e.status === 401) { LS.del('ycode'); S.code = null; return showLogin('Votre code d\'accès n\'est plus valable. Contactez l\'administrateur.'); } return showOffline(e.message); }
+  const pid = Number(LS.get('yprofile'));
+  if (pid) { try { const list = await api('/api/profiles'); const p = list.find(x => x.id === pid); if (p) return chooseProfile(p); } catch (e) { return showOffline(e.message); } }
+  showProfiles();
+}
+boot();
+</script></body></html>

@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Yctlflix — administration du relais</title>
+<style>
+:root{--bg:#0a0908;--card:#14110e;--line:#2a241c;--tx:#F1EEE7;--mu:#a39a8a;--g1:#C9A057;--g2:#F2DCA8;--ok:#7bc47f;--ko:#e57373}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 system-ui,Segoe UI,sans-serif}
+h1{font-family:Georgia,'Cormorant Garamond',serif;font-weight:600;font-size:28px;margin:0;background:linear-gradient(90deg,var(--g1),var(--g2));-webkit-background-clip:text;background-clip:text;color:transparent}
+header{display:flex;align-items:center;gap:18px;padding:18px 28px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+nav{display:flex;gap:6px;flex-wrap:wrap}nav button{background:none;border:1px solid var(--line);color:var(--mu);padding:8px 16px;border-radius:999px;cursor:pointer;font:inherit}
+nav button.on{color:#14110e;background:linear-gradient(90deg,var(--g1),var(--g2));border-color:transparent;font-weight:600}
+main{max-width:1100px;margin:0 auto;padding:24px 28px}section{display:none}section.on{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px 20px;margin-bottom:18px}
+h2{margin:0 0 10px;font-size:17px;color:var(--g2)}p.mu,.mu{color:var(--mu)}
+textarea,input,select{width:100%;background:#0d0b09;color:var(--tx);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font:inherit}
+textarea{min-height:130px;font-family:ui-monospace,Consolas,monospace;font-size:13px}
+button.b{background:linear-gradient(90deg,var(--g1),var(--g2));color:#14110e;border:0;border-radius:999px;padding:9px 18px;font-weight:600;cursor:pointer;font:inherit;font-weight:600}
+button.s{background:none;border:1px solid var(--line);color:var(--tx);border-radius:999px;padding:6px 14px;cursor:pointer;font:inherit;font-size:13px}
+button.d{border-color:#5a2a2a;color:var(--ko)}button:disabled{opacity:.4;cursor:default}
+table{width:100%;border-collapse:collapse;font-size:13.5px}th{color:var(--mu);font-weight:500;text-align:left}th,td{padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px}.row>*{flex:0 0 auto}
+.ok{color:var(--ok)}.ko{color:var(--ko)}.warn{color:#e5c06b}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}.grid label{font-size:12px;color:var(--mu)}
+.bar{height:6px;background:#241f18;border-radius:6px;overflow:hidden;min-width:90px}.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--g1),var(--g2))}
+pre{white-space:pre-wrap;background:#0d0b09;border:1px solid var(--line);border-radius:12px;padding:10px;max-height:240px;overflow:auto;font-size:12px}
+#login{max-width:380px;margin:12vh auto}#msg{position:fixed;right:18px;bottom:18px;background:#1c1710;border:1px solid var(--g1);padding:12px 16px;border-radius:14px;max-width:420px;display:none}
+code{background:#0d0b09;border-radius:6px;padding:1px 6px}
+</style></head><body>
+<div id="login" class="card"><h1>Yctlflix</h1><p class="mu">Mot de passe administrateur du relais</p>
+<input id="pw" type="password" autocomplete="current-password" placeholder="Mot de passe"><div class="row"><button class="b" onclick="enter()">Entrer</button></div>
+<p class="mu" style="font-size:13px">Il est affiché dans la fenêtre noire au premier démarrage, et dans <code>data/MOT-DE-PASSE-ADMIN.txt</code>.</p></div>
+
+<div id="app" style="display:none">
+<header><h1>Yctlflix · relais</h1>
+<nav id="nav"></nav><span class="mu" id="top"></span></header>
+<main>
+<section id="s-sources">
+ <div class="card"><h2>Ajouter des sources</h2>
+  <p class="mu">Une source par ligne : <code>NomDeLaSource http://serveur:port identifiant motdepasse</code></p>
+  <textarea id="paste" placeholder="GoldenPass http://serveur.tv:8080 monuser monpass&#10;Ma Source http://autre.tv user2 pass2"></textarea>
+  <div class="row"><button class="b" onclick="analyse()">Analyser</button><button class="s" id="saveBtn" onclick="saveRows()" disabled>Enregistrer ces sources</button></div>
+  <div id="an"></div></div>
+ <div class="card"><h2>Sources enregistrées</h2><div class="row" style="margin:0 0 8px"><button class="s" onclick="testAll()">Tester toutes les sources</button></div><div id="srcs"></div></div>
+</section>
+<section id="s-import">
+ <div class="card"><h2>Import du catalogue</h2>
+  <p class="mu"><b>Importer tout</b> : lecture complète de chaque source active, une fois. <b>Importer les nouveautés</b> : ajoute seulement ce qui est nouveau, marque « retiré » ce qui a disparu (rien n'est supprimé), complète aussi un import interrompu. Le relais travaille tout seul : vous pouvez fermer cette page.</p>
+  <div class="row"><button class="b" onclick="startImport('full')">Importer tout</button><button class="s" onclick="startImport('news')">Importer les nouveautés</button><span id="imps" class="mu"></span></div></div>
+ <div class="card"><h2>Avancement</h2><div id="imp"></div><pre id="implog" style="margin-top:12px"></pre></div>
+ <div class="card"><h2>Total du catalogue</h2><div id="tot"></div></div>
+</section>
+<section id="s-codes">
+ <div class="card"><h2>Créer des codes d'accès</h2>
+  <p class="mu">Un code par compte base44. L'utilisateur ne le voit jamais : vous le collez dans sa fiche, base44 l'envoie au relais. Un nom par ligne pour en créer plusieurs d'un coup.</p>
+  <textarea id="labels" style="min-height:70px" placeholder="Marie&#10;Paul (téléphone)"></textarea>
+  <div class="grid" style="margin-top:10px">
+   <div><label>Lectures simultanées (-1 = illimité)</label><input id="c-conn" type="number" value="1"></div>
+   <div><label>Appareils (-1 = illimité)</label><input id="c-dev" type="number" value="-1"></div>
+   <div><label>Téléchargement autorisé</label><select id="c-dl"><option value="0">Non</option><option value="1">Oui</option></select></div>
+   <div><label>Téléchargements par jour (-1 = illimité)</label><input id="c-dld" type="number" value="0"></div>
+   <div><label>Profils (-1 = illimité)</label><input id="c-prof" type="number" value="5"></div>
+   <div><label>Valable (jours, vide = sans limite)</label><input id="c-days" type="number" placeholder="30"></div></div>
+  <div class="row"><button class="b" onclick="mkCodes()">Créer</button></div><pre id="newcodes" style="display:none"></pre></div>
+ <div class="card"><h2>Codes existants</h2><div id="codes"></div></div>
+</section>
+<section id="s-set">
+ <div class="card"><h2>Site autorisé à utiliser le relais</h2>
+  <p class="mu">Collez l'adresse de votre site base44 (par exemple <code>https://monsite.base44.app</code>), une par ligne. Vide = tous les sites (déconseillé une fois en ligne).</p>
+  <textarea id="origins" style="min-height:70px"></textarea>
+  <div class="row"><label><input type="checkbox" id="remote" style="width:auto"> Autoriser l'administration à distance (non recommandé)</label></div>
+  <div class="row"><button class="b" onclick="saveCfg()">Enregistrer</button></div></div>
+ <div class="card"><h2>Catégories du profil enfants</h2>
+  <p class="mu">Le profil enfants ne voit que les catégories cochées (films et séries, jamais les chaînes). Sans sélection, il ne voit rien.</p>
+  <div class="row"><button class="s" onclick="loadKids('film')">Catégories de films</button><button class="s" onclick="loadKids('serie')">Catégories de séries</button><button class="b" onclick="saveKids()">Enregistrer</button><span id="kcount" class="mu"></span></div>
+  <div id="kids" style="max-height:260px;overflow:auto;margin-top:10px;columns:2 260px"></div></div>
+ <div class="card"><h2>Changer le mot de passe administrateur</h2><input id="np" type="password" placeholder="Nouveau mot de passe (8 caractères minimum)"><div class="row"><button class="b" onclick="changePw()">Changer</button></div></div>
+ <div class="card"><h2>État</h2><div id="state"></div><h2 style="margin-top:14px">Journal</h2><pre id="log"></pre></div>
+</section>
+</main></div><div id="msg"></div>
+<script>
+const $=s=>document.querySelector(s);let PW=sessionStorage.getItem('pw')||'';let rows=[];let poll=null;
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function toast(t,ms=4500){const m=$('#msg');m.textContent=t;m.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>m.style.display='none',ms)}
+async function api(path,method='GET',body){
+  try{const r=await fetch('/admin/api/'+path,{method,headers:{'X-Admin':PW,'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});
+   const j=await r.json().catch(()=>({error:'Réponse illisible'}));if(!r.ok)throw new Error(j.error||('Erreur '+r.status));return j}
+  catch(e){if(e.message.includes('Failed to fetch'))throw new Error('Le relais ne répond pas : est-il lancé ?');throw e}}
+async function enter(){PW=$('#pw').value;try{await api('status');sessionStorage.setItem('pw',PW);boot()}catch(e){toast(e.message)}}
+$('#pw').addEventListener('keydown',e=>{if(e.key==='Enter')enter()});
+const TABS=[['sources','Sources'],['import','Import'],['codes','Codes d\'accès'],['set','Réglages']];
+function boot(){$('#login').style.display='none';$('#app').style.display='block';
+ $('#nav').innerHTML=TABS.map(([k,t])=>`<button data-k="${k}" onclick="tab('${k}')">${t}</button>`).join('');tab('sources')}
+function tab(k){document.querySelectorAll('section').forEach(s=>s.classList.toggle('on',s.id==='s-'+k));
+ document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.k===k));clearInterval(poll);
+ if(k==='sources')loadSources();if(k==='import'){loadImport();poll=setInterval(loadImport,2000)}if(k==='codes')loadCodes();if(k==='set')loadSet()}
+async function analyse(){try{rows=await api('sources/analyse','POST',{text:$('#paste').value});
+ $('#an').innerHTML='<table><tr><th>Ligne</th><th>Nom</th><th>Adresse</th><th>Identifiant</th><th>Mot de passe</th><th>Statut</th></tr>'+rows.map(r=>`<tr><td>${r.line}</td><td>${esc(r.name||'')}</td><td>${esc(r.server||'')}</td><td>${esc(r.user||'')}</td><td>${r.pass?'••••••':''}</td><td class="${r.status==='prête'?'ok':'ko'}">${r.status}${r.reason?' — '+esc(r.reason):''}</td></tr>`).join('')+'</table>';
+ const n=rows.filter(r=>r.status==='prête').length;$('#saveBtn').disabled=!n;$('#saveBtn').textContent=n?`Enregistrer ${n} source(s)`:'Enregistrer ces sources'}catch(e){toast(e.message)}}
+async function saveRows(){try{const ok=rows.filter(r=>r.status==='prête');const j=await api('sources/save','POST',{rows:ok});toast(`${j.saved.length} source(s) enregistrée(s) : n° ${j.saved.join(', ')}`);
+ $('#paste').value='';$('#an').innerHTML='';$('#saveBtn').disabled=true;loadSources()}catch(e){toast(e.message)}}
+async function loadSources(){const st=await api('status');$('#top').textContent=`${st.total.film+st.total.serie+st.total.chaine} titres · ffmpeg ${st.ffmpeg?'oui':'non'}`;
+ $('#srcs').innerHTML=st.sources.length?'<table><tr><th>N°</th><th>Nom</th><th>Adresse</th><th>Abonnement</th><th>Actif</th><th></th></tr>'+st.sources.map(s=>`<tr><td>${s.n}</td><td>${esc(s.name)}</td><td>${esc(s.server)}</td>
+ <td>${s.expiry?new Date(s.expiry).toLocaleDateString('fr-FR'):'—'} ${s.maxconn?`· ${esc(s.maxconn)} conn.`:''}<div id="t${s.n}" class="${s.last_error?'ko':'mu'}">${esc(s.last_error||'')}</div></td>
+ <td><input type="checkbox" style="width:auto" ${s.active?'checked':''} onchange="act(${s.n},this.checked)"></td>
+ <td><button class="s" onclick="test(${s.n})">Tester</button> <button class="s" onclick="testplay(${s.n})">Tester la lecture</button> <button class="s d" onclick="del(${s.n})">Supprimer</button></td></tr>`).join('')+'</table>':'<p class="mu">Aucune source pour le moment.</p>'}
+async function test(n){$('#t'+n).textContent='Test en cours…';$('#t'+n).className='mu';try{const r=await api(`sources/${n}/test`,'POST');$('#t'+n).textContent=r.message;$('#t'+n).className=r.ok?'ok':'ko'}catch(e){$('#t'+n).textContent=e.message;$('#t'+n).className='ko'}}
+async function testplay(n){$('#t'+n).textContent='Lecture d\'essai…';$('#t'+n).className='mu';try{const r=await api(`sources/${n}/testplay`,'POST');$('#t'+n).textContent=r.message;$('#t'+n).className=r.ok?'ok':'ko'}catch(e){$('#t'+n).textContent=e.message;$('#t'+n).className='ko'}}
+async function testAll(){const st=await api('status');await Promise.all(st.sources.map(s=>test(s.n)))}
+async function act(n,v){await api(`sources/${n}/active`,'POST',{active:v})}
+async function del(n){if(!confirm(`Supprimer la source ${n} et tous ses titres importés ?`))return;await api('sources/'+n,'DELETE');loadSources()}
+async function startImport(mode){try{await api('import','POST',{mode});toast(mode==='full'?'Import complet lancé':'Import des nouveautés lancé');loadImport()}catch(e){toast(e.message)}}
+const TL={film:'Films',serie:'Séries',chaine:'Chaînes'};
+async function loadImport(){try{const [im,st]=await Promise.all([api('import'),api('status')]);
+ $('#top').textContent=`${st.total.film+st.total.serie+st.total.chaine} titres · ffmpeg ${st.ffmpeg?'oui':'non'}`;
+ $('#imps').textContent=im.running?'Import en cours…':(im.finishedAt?'Dernier import : '+new Date(im.finishedAt).toLocaleString('fr-FR'):'');
+ const items=im.running||im.items.length?im.items:[];
+ $('#imp').innerHTML=items.length?'<table><tr><th>Source</th><th>Type</th><th>État</th><th>Attendu</th><th>Enregistré</th><th>Manquant</th><th>Nouveautés</th><th>Erreur</th></tr>'+items.map(i=>`<tr><td>${i.src}</td><td>${TL[i.type]}</td><td class="${i.state==='terminé'?'ok':/échec|incomplet/.test(i.state)?'ko':'warn'}">${i.state}</td><td>${i.expected}</td><td>${i.saved}<div class="bar"><i style="width:${i.expected?Math.min(100,i.saved/i.expected*100):0}%"></i></div></td><td>${i.missing}</td><td>+${i.added} −${i.removed} ↺${i.returned}</td><td class="ko">${esc(i.error||'')}</td></tr>`).join('')+'</table>':'<p class="mu">Aucun import lancé depuis le démarrage du relais.</p>';
+ $('#implog').textContent=im.log.join('\n');
+ $('#tot').innerHTML=`<p><b>${(st.total.film+st.total.serie+st.total.chaine).toLocaleString('fr-FR')}</b> titres actifs — ${st.total.film.toLocaleString('fr-FR')} films, ${st.total.serie.toLocaleString('fr-FR')} séries, ${st.total.chaine.toLocaleString('fr-FR')} chaînes</p>`+
+ '<table><tr><th>Source</th><th>Films</th><th>Séries</th><th>Chaînes</th></tr>'+st.sources.map(s=>`<tr><td>${s.n} · ${esc(s.name)}</td>`+['film','serie','chaine'].map(t=>{const x=s.types[t];const m=x.expected!=null&&x.saved<x.expected;return `<td class="${m?'ko':''}">${x.saved.toLocaleString('fr-FR')}${x.expected!=null?' / '+x.expected.toLocaleString('fr-FR'):''}${x.retired?` <span class="mu">(${x.retired} retirés)</span>`:''}</td>`}).join('')+'</tr>').join('')+'</table>'}catch(e){}}
+async function mkCodes(){const labels=$('#labels').value.split('\n').map(s=>s.trim()).filter(Boolean);if(!labels.length)return toast('Écrivez au moins un nom');
+ try{const out=await api('codes','POST',{labels,maxConn:$('#c-conn').value,maxDevices:$('#c-dev').value,canDownload:$('#c-dl').value==='1',maxDlDay:$('#c-dld').value,maxProfiles:$('#c-prof').value,days:$('#c-days').value});
+ $('#newcodes').style.display='block';$('#newcodes').textContent=out.map(o=>`${o.label}\t${o.code}`).join('\n');$('#labels').value='';loadCodes()}catch(e){toast(e.message)}}
+async function loadCodes(){const cs=await api('codes');
+ $('#codes').innerHTML=cs.length?'<table><tr><th>Nom</th><th>Code</th><th>Simult.</th><th>Appareils</th><th>Téléch.</th><th>Profils</th><th>Fin</th><th>Actif</th><th></th></tr>'+cs.map(c=>`<tr><td>${esc(c.label)}</td><td><code>${c.code.match(/.{5}/g).join('-')}</code></td><td>${c.active_streams}/${c.max_conn<0?'∞':c.max_conn}</td><td>${c.devices}/${c.max_devices<0?'∞':c.max_devices}</td><td>${c.can_download?(c.max_dl_day<0?'∞':c.max_dl_day)+'/jour':'non'}</td><td>${c.max_profiles<0?'∞':c.max_profiles}</td><td>${c.expires?new Date(c.expires).toLocaleDateString('fr-FR'):'—'}</td>
+ <td><input type="checkbox" style="width:auto" ${c.active?'checked':''} onchange="patch('${c.code}',{active:this.checked})"></td><td><button class="s" onclick="editCode('${c.code}',${c.max_conn},${c.max_devices},${c.can_download},${c.max_dl_day},${c.max_profiles})">Quotas</button> <button class="s d" onclick="delCode('${c.code}')">Supprimer</button></td></tr>`).join('')+'</table>':'<p class="mu">Aucun code.</p>'}
+async function patch(code,b){try{await api('codes/'+code,'PATCH',b)}catch(e){toast(e.message)}}
+async function editCode(code,mc,md,dl,dd,mp){const a=prompt('Lectures simultanées (-1 = illimité)',mc);if(a===null)return;const b=prompt('Appareils (-1 = illimité)',md);if(b===null)return;
+ const c=prompt('Téléchargement autorisé ? (1 = oui, 0 = non)',dl);if(c===null)return;const d=prompt('Téléchargements par jour (-1 = illimité)',dd);if(d===null)return;
+ const e=prompt('Profils (-1 = illimité)',mp);if(e===null)return;
+ await patch(code,{maxConn:+a,maxDevices:+b,canDownload:c==='1',maxDlDay:+d,maxProfiles:+e});loadCodes()}
+async function delCode(c){if(confirm('Supprimer ce code ? Le compte concerné ne pourra plus rien lire.')){await api('codes/'+c,'DELETE');loadCodes()}}
+async function loadSet(){const st=await api('status');$('#origins').value=(st.origins||[]).join('\n');$('#remote').checked=st.adminRemote;
+ $('#state').innerHTML=`<p>Version ${st.version} · ffmpeg : ${st.ffmpeg?'<span class="ok">'+esc(st.ffmpeg)+'</span>':'<span class="ko">introuvable (le son AC-3 ne sera pas converti)</span>'} · ffprobe : ${st.ffprobe?'<span class="ok">oui</span>':'<span class="ko">non</span>'} · lectures en cours : ${st.streams}</p>`;
+ const l=await api('log');$('#log').textContent=l.map(x=>new Date(x.t).toLocaleString('fr-FR')+'  '+x.what).join('\n')||'—'}
+let KIDS=new Set(),KSHOW=[];
+async function loadKids(type){if(!KIDS.size&&!KSHOW.length){try{(await api('kids')).cats.forEach(c=>KIDS.add(c))}catch(e){return toast(e.message)}}
+ try{KSHOW=await api('cats?type='+type)}catch(e){return toast(e.message)}
+ $('#kids').innerHTML=KSHOW.map((c,i)=>`<label style="display:block"><input type="checkbox" style="width:auto" data-i="${i}" ${KIDS.has(c.cat)?'checked':''} onchange="tickKid(${i},this.checked)"> ${esc(c.cat)} <span class="mu">(${c.n})</span></label>`).join('')||'<p class="mu">Aucune catégorie : importez d\'abord le catalogue.</p>';kcount()}
+function tickKid(i,v){const c=KSHOW[i].cat;v?KIDS.add(c):KIDS.delete(c);kcount()}
+function kcount(){$('#kcount').textContent=KIDS.size+' catégorie(s) cochée(s)'}
+async function saveKids(){try{await api('kids','POST',{cats:[...KIDS]});toast('Catégories enregistrées')}catch(e){toast(e.message)}}
+async function saveCfg(){try{await api('config','POST',{origins:$('#origins').value.split('\n'),adminRemote:$('#remote').checked});toast('Réglages enregistrés')}catch(e){toast(e.message)}}
+async function changePw(){try{await api('config','POST',{newPassword:$('#np').value});PW=$('#np').value;sessionStorage.setItem('pw',PW);$('#np').value='';toast('Mot de passe changé')}catch(e){toast(e.message)}}
+if(PW)api('status').then(boot).catch(()=>{});
+</script></body></html>

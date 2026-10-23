@@ -1,0 +1,8 @@
+{
+  "name": "yctlflix-relais",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Relais et catalogue local pour Yctlflix (aucune dépendance)",
+  "scripts": { "start": "node --disable-warning=ExperimentalWarning server.mjs" }
+}
