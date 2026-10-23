@@ -598,6 +598,15 @@ const ADMIN_HTML = path.join(HERE, 'admin.html');
 const APP_HTML = path.join(HERE, 'app.html');
 const safeName = (s) => String(s || 'video').replace(/[\\/:*?"<>|\u0000-\u001f]+/g, ' ').trim().slice(0, 120) || 'video';
 
+/* Conversion HLS pour les iPhone / iPad (Safari ne lit pas un MP4 envoyé « en continu » sans pouvoir demander des morceaux) */
+const HLSDIR = path.join(DATA, 'hls');
+try { fs.rmSync(HLSDIR, { recursive: true, force: true }); } catch {}
+fs.mkdirSync(HLSDIR, { recursive: true });
+const hlsJobs = new Map();                                  // clé -> { n, proc, dir, last }
+function killJob(k) { const j = hlsJobs.get(k); if (!j) return; hlsJobs.delete(k); try { j.proc.kill('SIGKILL'); } catch {} fs.rm(j.dir, { recursive: true, force: true }, () => {}); }
+setInterval(() => { const now = Date.now(); for (const [k, j] of hlsJobs) if (now - j.last > 60_000) killJob(k); }, 15_000).unref();
+const killJobsOf = (n) => { for (const [k, j] of hlsJobs) if (j.n === n) killJob(k); };
+
 async function handleStream(req, res, url, parts) {
   const tok = parts[1], what = parts[2];
   const t = verify(tok);
@@ -657,6 +666,53 @@ async function handleStream(req, res, url, parts) {
     ff.stdout.pipe(res); ff.on('error', () => res.end()); ff.on('close', () => res.end());
     const kill = () => { if (!ff.killed) ff.kill('SIGKILL'); }; req.on('close', kill); res.on('close', kill);
     return;
+  }
+  if (what === 'ffh') {                                   // flux HLS converti (iPhone / iPad)
+    if (!ffVersion) throw httpErr(503, 'ffmpeg est introuvable sur ce serveur : la conversion est impossible');
+    const isLive = t.t === 'chaine';
+    if (parts[3] === 'index.m3u8') {
+      const start = isLive ? 0 : Math.floor(Math.max(0, Number(url.searchParams.get('t')) || 0));
+      const at = Math.floor(Math.max(0, Number(url.searchParams.get('a')) || 0));
+      const recode = url.searchParams.get('vt') === '1';
+      const key = `${t.n}_${start}_${at}_${recode ? 1 : 0}`;
+      let job = hlsJobs.get(key);
+      if (!job) {
+        killJobsOf(t.n);
+        const dir = path.join(HLSDIR, key); fs.mkdirSync(dir, { recursive: true });
+        const args = ['-hide_banner', '-loglevel', 'error', '-user_agent', UA, ...(isLive ? [] : ['-readrate', '3']), '-fflags', '+genpts',
+          ...(start ? ['-ss', String(start)] : []), '-i', target, '-map', '0:v:0?', '-map', `0:a:${at}?`, '-sn', '-dn',
+          ...(recode ? ['-c:v', 'libx264', '-preset', 'veryfast', '-crf', '23', '-pix_fmt', 'yuv420p', '-force_key_frames', 'expr:gte(t,n_forced*4)'] : ['-c:v', 'copy']),
+          '-c:a', 'aac', '-ac', '2', '-b:a', '192k', '-f', 'hls', '-hls_time', '4', '-hls_segment_type', 'mpegts',
+          '-hls_segment_filename', path.join(dir, 's%05d.ts'),
+          ...(isLive ? ['-hls_list_size', '8', '-hls_flags', 'delete_segments+independent_segments+temp_file']
+            : ['-hls_playlist_type', 'event', '-hls_list_size', '0', '-hls_flags', 'independent_segments+temp_file']),
+          path.join(dir, 'index.m3u8')];
+        const proc = spawn(FFMPEG, args, { stdio: ['ignore', 'ignore', 'pipe'] });
+        let err = ''; proc.stderr.on('data', d => { err += d; if (err.length > 4000) err = err.slice(-2000); });
+        proc.on('error', () => {});
+        proc.on('close', (c) => { if (c && c !== 255 && hlsJobs.get(key) === job) console.error(`ffmpeg HLS arrêté (code ${c}) ${err.trim().split('\n').pop()}`); });
+        job = { n: t.n, proc, dir, last: Date.now() }; hlsJobs.set(key, job);
+      }
+      job.last = Date.now();
+      let txt = null;
+      for (let i = 0; i < 150; i++) {                      // attend les premiers morceaux (30 s au plus)
+        try { const x = fs.readFileSync(path.join(job.dir, 'index.m3u8'), 'utf8'); if (x.includes('#EXTINF')) { txt = x; break; } } catch {}
+        if (job.proc.exitCode !== null) break;
+        await sleep(200);
+      }
+      if (!txt) throw httpErr(502, 'La conversion du flux n\'a pas démarré (le fournisseur est peut-être occupé)');
+      const body = txt.split('\n').map(l => /^s\d{5}\.ts$/.test(l.trim()) ? `${key}/${l.trim()}` : l).join('\n');
+      return send(req, res, 200, body, 'application/vnd.apple.mpegurl', { 'Cache-Control': 'no-store' });
+    }
+    const key = parts[3] || '', f = parts[4] || '';
+    if (!/^[0-9a-f]+_\d+_\d+_[01]$/.test(key) || !/^s\d{5}\.ts$/.test(f)) throw httpErr(404, 'route inconnue');
+    const job = hlsJobs.get(key);
+    if (!job || job.n !== t.n) throw httpErr(404, 'Morceau expiré : relancez la lecture');
+    job.last = Date.now();
+    const file = path.join(job.dir, f);
+    let st; try { st = fs.statSync(file); } catch { throw httpErr(404, 'Morceau introuvable'); }
+    res.writeHead(200, { ...cors(req), 'Content-Type': 'video/mp2t', 'Content-Length': st.size, 'Cache-Control': 'no-store' });
+    return fs.createReadStream(file).pipe(res);
   }
   if (what === 'ff') {                                    // son converti en AAC (et vidéo réencodée si demandé)
     if (!ffVersion) throw httpErr(503, 'ffmpeg est introuvable sur cet ordinateur : la conversion du son est impossible');
@@ -805,7 +861,7 @@ async function handleApi(req, res, url, parts) {
     return send(req, res, 200, { ok: true });
   }
   if (route === 'release' && req.method === 'POST') {
-    const b = await bodyOf(req); live.get(c.code)?.delete(String(b.n)); return send(req, res, 200, { ok: true });
+    const b = await bodyOf(req); live.get(c.code)?.delete(String(b.n)); killJobsOf(String(b.n)); return send(req, res, 200, { ok: true });
   }
   throw httpErr(404, 'route inconnue');
 }
