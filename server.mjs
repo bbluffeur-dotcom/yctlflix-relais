@@ -1062,3 +1062,9 @@ server.listen(PORT, HOST, () => {
   if (firstPassword && !process.env.ADMIN_PASSWORD) console.log(`\n  PREMIER DÉMARRAGE — mot de passe administrateur :  ${firstPassword}\n  (aussi dans data/MOT-DE-PASSE-ADMIN.txt)`);
   console.log('');
 });
+// Anti-veille : KEEPALIVE_URL=https://mon-site/health -> le relais s'appelle lui-meme toutes les 4 min.
+if (process.env.KEEPALIVE_URL) {
+  const ka = () => fetch(process.env.KEEPALIVE_URL, { signal: AbortSignal.timeout(15000) }).catch(() => {});
+  setInterval(ka, 4 * 60 * 1000);
+  console.log('  Anti-veille actif : ' + process.env.KEEPALIVE_URL);
+}
