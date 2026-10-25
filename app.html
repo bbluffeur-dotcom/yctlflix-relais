@@ -520,7 +520,7 @@ function openPlayer(o) {
     // piste audio souhaitée : le français s'il existe
     if (pr?.tracks?.length && P.audioIdx === 0 && !P.audioChosen) { const i = pr.tracks.findIndex(t => isFr(t.lang)); if (i > 0) P.audioIdx = i; P.audioChosen = true; }
     const audioBad = pr && pr.hasAudio && !pr.audioPlayable, videoBad = pr && pr.video && !pr.videoPlayable;
-    if (pr && !pr.hasAudio) setT(() => banner('Ce flux n\'envoie aucun son'), 800);
+    
     let mode;
     if (live) mode = (audioBad || videoBad) && canFF ? 'ff' : 'hls';
     else {
@@ -612,7 +612,7 @@ function openPlayer(o) {
     if (pr && !pr.hasAudio) cause = 'Ce flux n\'envoie aucun son.';
     else if (pr && pr.audio && !pr.audioPlayable) cause = `Le format audio (${pr.audio.toUpperCase()}) n'est pas lu par votre navigateur.`;
     if (pr && pr.hasAudio && !pr.audioPlayable && P.ticket.ffmpeg && !isFF()) { P.forceFF = true; return play('ff', live ? 0 : P.curPos()); }
-    banner('Aucun son détecté — ' + cause);
+    
   }
   function syncVol() { $('#vl', el).value = v.muted ? 0 : v.volume * 100; $('#mb', el).innerHTML = v.muted || v.volume === 0 ? ICON.mute : ICON.vol; if (v.volume > 0) LS.set('yvol', String(v.volume)); LS.set('ymuted', v.muted ? '1' : '0'); }
   function updatePP() { $('#pp', el).innerHTML = v.paused ? ICON.play : ICON.pause; }
